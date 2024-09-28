@@ -1,24 +1,19 @@
 dataset = {
-   'Run2017B' : '/SingleMuon/Run2017B-UL2017_MiniAODv2-v1/MINIAOD',
-   'Run2017C' : '/SingleMuon/Run2017C-UL2017_MiniAODv2-v1/MINIAOD',
-   'Run2017D' : '/SingleMuon/Run2017D-UL2017_MiniAODv2-v1/MINIAOD',
-   'Run2017E' : '/SingleMuon/Run2017E-UL2017_MiniAODv2-v1/MINIAOD',
-   'Run2017F' : '/SingleMuon/Run2017F-UL2017_MiniAODv2-v1/MINIAOD',
+   'Run2016F' : '/SingleElectron/Run2016F-UL2016_MiniAODv2-v2/MINIAOD',
+   'Run2016G' : '/SingleElectron/Run2016G-UL2016_MiniAODv2-v2/MINIAOD',
+   'Run2016H' : '/SingleElectron/Run2016H-UL2016_MiniAODv2-v2/MINIAOD',
    }
+#nevents = -1 
 lumisPerJob = {
-   'Run2017B':        500,
-   'Run2017C':        500,
-   'Run2017D':        500,
-   'Run2017E':        500,
-   'Run2017F':        500,
+   'Run2016F':        500,
+   'Run2016G':        500,
+   'Run2016H':        500,
    }
 
 listOfSamples = [
-   'Run2017B',        
-   'Run2017C',        
-   'Run2017D',        
-   'Run2017E',        
-   'Run2017F',        
+   'Run2016F',        
+   'Run2016G',        
+   'Run2016H',        
    ]
 
 if __name__ == '__main__':
@@ -32,21 +27,20 @@ if __name__ == '__main__':
    def submit(config):
        res = crabCommand('submit', config = config)
 
-   config.General.workArea = 'crab_TrigEff_HWW_Muon_2017'
+   config.General.workArea = 'crab_TrigEff_HWW_EGamma_2016FGH_noHIPM'
    config.General.transferLogs = False
 
    config.JobType.allowUndistributedCMSSW = True
    config.JobType.pluginName = 'Analysis'
-   config.JobType.psetName = 'runNtupler_2017.py'
+   config.JobType.psetName = 'runNtupler_2016.py'
    config.JobType.outputFiles = ['TnP_ntuple.root']
 
    config.Data.inputDBS = 'global'
    config.Data.splitting = 'LumiBased'
-   #config.Data.lumiMask = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions18/13TeV/PromptReco/Cert_314472-325175_13TeV_PromptReco_Collisions18_JSON.txt'
-   config.Data.lumiMask = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions17/13TeV/Legacy_2017/Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSON.txt'
+   config.Data.lumiMask = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions16/13TeV/Legacy_2016/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt'
    config.Data.publication = False
    config.Data.totalUnits = -1
-   config.Data.outLFNDirBase = '/store/group/phys_higgs/cmshww/arun/TriggerEff_RunII_ULLegacy/TrigEff_HWW_Muon_2017'
+   config.Data.outLFNDirBase = '/store/group/phys_higgs/cmshww/arun/TriggerEff_RunII_ULLegacy/TrigEff_HWW_EGamma_2016FGH_noHIPM'
 
    config.Site.storageSite ='T2_CH_CERN'
  #  config.Site.blacklist = ['T2_BR_SPRACE', 'T2_US_Wisconsin', 'T1_RU_JINR', 'T2_RU_JINR', 'T2_EE_Estonia']

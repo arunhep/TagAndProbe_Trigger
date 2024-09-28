@@ -1,25 +1,28 @@
 dataset = {
-   'Run2017B' : '/SingleElectron/Run2017B-UL2017_MiniAODv2-v1/MINIAOD',
-   'Run2017C' : '/SingleElectron/Run2017C-UL2017_MiniAODv2-v1/MINIAOD',
-   'Run2017D' : '/SingleElectron/Run2017D-UL2017_MiniAODv2-v1/MINIAOD',
-   'Run2017E' : '/SingleElectron/Run2017E-UL2017_MiniAODv2-v1/MINIAOD',
-   'Run2017F' : '/SingleElectron/Run2017F-UL2017_MiniAODv2-v1/MINIAOD',
+   'Run2016B_ver1' : '/SingleMuon/Run2016B-ver1_HIPM_UL2016_MiniAODv2-v2/MINIAOD',
+   'Run2016B_ver2' : '/SingleMuon/Run2016B-ver2_HIPM_UL2016_MiniAODv2-v2/MINIAOD',
+   'Run2016C' : '/SingleMuon/Run2016C-HIPM_UL2016_MiniAODv2-v2/MINIAOD',
+   'Run2016D' : '/SingleMuon/Run2016D-HIPM_UL2016_MiniAODv2-v2/MINIAOD',
+   'Run2016E' : '/SingleMuon/Run2016E-HIPM_UL2016_MiniAODv2-v2/MINIAOD',
+   'Run2016F' : '/SingleMuon/Run2016F-HIPM_UL2016_MiniAODv2-v2/MINIAOD',
    }
 #nevents = -1 
 lumisPerJob = {
-   'Run2017B':        500,
-   'Run2017C':        500,
-   'Run2017D':        500,
-   'Run2017E':        500,
-   'Run2017F':        500,
+   'Run2016B_ver1':        500,
+   'Run2016B_ver2':        500,
+   'Run2016C':        500,
+   'Run2016D':        500,
+   'Run2016E':        500,
+   'Run2016F':        500,
    }
 
 listOfSamples = [
-   'Run2017B',        
-   'Run2017C',        
-   'Run2017D',        
-   'Run2017E',        
-   'Run2017F',        
+   'Run2016B_ver1',        
+   'Run2016B_ver2',        
+   'Run2016C',        
+   'Run2016D',        
+   'Run2016E',        
+   'Run2016F',        
    ]
 
 if __name__ == '__main__':
@@ -33,20 +36,20 @@ if __name__ == '__main__':
    def submit(config):
        res = crabCommand('submit', config = config)
 
-   config.General.workArea = 'crab_TrigEff_HWW_EGamma_2017'
+   config.General.workArea = 'crab_TrigEff_HWW_Muon_2016_HIPM'
    config.General.transferLogs = False
 
    config.JobType.allowUndistributedCMSSW = True
    config.JobType.pluginName = 'Analysis'
-   config.JobType.psetName = 'runNtupler_2017.py'
+   config.JobType.psetName = 'runNtupler_2016.py'
    config.JobType.outputFiles = ['TnP_ntuple.root']
 
    config.Data.inputDBS = 'global'
    config.Data.splitting = 'LumiBased'
-   config.Data.lumiMask = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions17/13TeV/Legacy_2017/Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSON.txt'
+   config.Data.lumiMask = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions16/13TeV/Legacy_2016/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt'
    config.Data.publication = False
    config.Data.totalUnits = -1
-   config.Data.outLFNDirBase = '/store/group/phys_higgs/cmshww/arun/TriggerEff_RunII_ULLegacy/TrigEff_HWW_EGamma_2017'
+   config.Data.outLFNDirBase = '/store/group/phys_higgs/cmshww/arun/TriggerEff_RunII_ULLegacy/TrigEff_HWW_Muon_2016_HIPM'
 
    config.Site.storageSite ='T2_CH_CERN'
  #  config.Site.blacklist = ['T2_BR_SPRACE', 'T2_US_Wisconsin', 'T1_RU_JINR', 'T2_RU_JINR', 'T2_EE_Estonia']

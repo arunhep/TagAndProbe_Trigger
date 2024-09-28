@@ -1,17 +1,15 @@
-#name = 'TrigEff_HWW_EGamma_2018'
-
 dataset = {
-   'Run2018A' : '/EGamma/Run2018A-12Nov2019_UL2018-v2/MINIAOD',
-   'Run2018B' : '/EGamma/Run2018B-12Nov2019_UL2018-v2/MINIAOD',
-   'Run2018C' : '/EGamma/Run2018C-12Nov2019_UL2018-v2/MINIAOD',
-   'Run2018D' : '/EGamma/Run2018D-12Nov2019_UL2018-v4/MINIAOD',
+   'Run2018A' : '/EGamma/Run2018A-UL2018_MiniAODv2-v1/MINIAOD',
+   'Run2018B' : '/EGamma/Run2018B-UL2018_MiniAODv2-v1/MINIAOD',
+   'Run2018C' : '/EGamma/Run2018C-UL2018_MiniAODv2-v1/MINIAOD',
+   'Run2018D' : '/EGamma/Run2018D-UL2018_MiniAODv2-v2/MINIAOD',
    }
 #nevents = -1 
 lumisPerJob = {
-   'Run2018A':        100,
-   'Run2018B':        100,
-   'Run2018C':        100,
-   'Run2018D':        100,
+   'Run2018A':        500,
+   'Run2018B':        500,
+   'Run2018C':        500,
+   'Run2018D':        500,
    }
 
 listOfSamples = [
@@ -42,7 +40,6 @@ if __name__ == '__main__':
 
    config.Data.inputDBS = 'global'
    config.Data.splitting = 'LumiBased'
-   #config.Data.lumiMask = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions18/13TeV/PromptReco/Cert_314472-325175_13TeV_PromptReco_Collisions18_JSON.txt'
    config.Data.lumiMask = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions18/13TeV/Legacy_2018/Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt'
    config.Data.publication = False
    config.Data.totalUnits = -1
