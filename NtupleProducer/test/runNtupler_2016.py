@@ -1,0 +1,220 @@
+import FWCore.ParameterSet.Config as cms
+import os
+
+process = cms.Process("Ntupler2016")
+
+process.load("FWCore.MessageService.MessageLogger_cfi")
+
+process.load("Configuration.StandardSequences.GeometryRecoDB_cff")
+
+process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
+
+process.MessageLogger.cerr.FwkReport.reportEvery = 1
+
+# NOTE: the pick the right global tag!
+#    for Spring15 50ns MC: global tag is 'auto:run2_mc_50'
+#    for Spring15 25ns MC: global tag is 'auto:run2_mc'
+#    for Run 2 data: global tag is 'auto:run2_data'
+#  as a rule, find the "auto" global tag in $CMSSW_RELEASE_BASE/src/Configuration/AlCa/python/autoCond.py
+#  This auto global tag will look up the "proper" global tag
+#  that is typically found in the DAS under the Configs for given dataset
+#  (although it can be "overridden" by requirements of a given release)
+from Configuration.AlCa.GlobalTag import GlobalTag
+#process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:run2_mc', '') 
+#process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:run2_mc','') 
+
+#
+# Define input data to read
+#
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
+
+
+
+#import FWCore.Utilities.FileUtils as FileUtils
+# 
+#inputFilesAOD = cms.untracked.vstring()
+#
+#
+#inputFilesAOD = cms.untracked.vstring( FileUtils.loadListFromFile (os.environ['CMSSW_BASE']+'/src/Efficiency/Analyzer/test/'+'inputFiles.txt') )
+#
+inputFilesAOD = cms.untracked.vstring(
+'root://cms-xrd-global.cern.ch//store/data/Run2017C/SingleElectron/AOD/12Sep2017-v1/70000/80EF56E5-69A6-E711-AB37-48FD8E2824D7.root',
+    )    
+
+inputFilesMiniAOD = cms.untracked.vstring(
+#'root://cms-xrd-global.cern.ch//store/data/Run2016F/SingleElectron/MINIAOD/UL2016_MiniAODv2-v2/280000/300DF0A3-CFB2-3D4C-B8C4-F3131D57CEA9.root'
+'root://cms-xrd-global.cern.ch//store/mc/RunIISummer20UL16MiniAODv2/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/MINIAODSIM/106X_mcRun2_asymptotic_v17-v1/2540000/0141D27F-3BA4-5D45-AE95-A4255918779A.root'
+#'root://cms-xrd-global.cern.ch//store/data/Run2016F/SingleMuon/MINIAOD/UL2016_MiniAODv2-v2/70000/060F0B51-FCEF-F343-890C-3043A4B268C2.root'
+    )
+#
+# You can list here either AOD or miniAOD files, but not both types mixed
+#
+useAOD = False 
+if useAOD == True :
+    inputFiles = inputFilesAOD
+    outputFile = "electron_ntuple.root"
+    pileupProductName = "addPileupInfo"
+    print("AOD input files are used")
+else :
+    inputFiles = inputFilesMiniAOD
+    outputFile = "TnP_ntuple.root"
+    pileupProductName = "slimmedAddPileupInfo"
+    print("MiniAOD input files are used")
+process.source = cms.Source ("PoolSource", fileNames = inputFiles )                             
+
+#
+# Set up electron ID (VID framework)
+#
+
+from PhysicsTools.SelectorUtils.tools.vid_id_tools import *
+# turn on VID producer, indicate data format  to be
+# DataFormat.AOD or DataFormat.MiniAOD, as appropriate 
+if useAOD == True :
+    dataFormat = DataFormat.AOD
+else :
+    dataFormat = DataFormat.MiniAOD
+
+switchOnVIDElectronIdProducer(process, dataFormat)
+# define which IDs we want to produce
+my_id_modules = ['RecoEgamma.ElectronIdentification.Identification.cutBasedElectronID_Fall17_94X_V2_cff',
+                 'RecoEgamma.ElectronIdentification.Identification.cutBasedElectronID_Fall17_94X_V1_cff',
+                 'RecoEgamma.ElectronIdentification.Identification.mvaElectronID_Fall17_noIso_V1_cff',
+                 'RecoEgamma.ElectronIdentification.Identification.mvaElectronID_Fall17_iso_V1_cff',
+                 'RecoEgamma.ElectronIdentification.Identification.mvaElectronID_Fall17_noIso_V2_cff',
+                 'RecoEgamma.ElectronIdentification.Identification.mvaElectronID_Fall17_iso_V2_cff',
+]
+#add them to the VID producer
+for idmod in my_id_modules:
+    setupAllVIDIdsInModule(process,idmod,setupVIDElectronSelection)
+
+process.minPtLeptons = cms.EDFilter("PtMinCandViewSelector",
+    src = cms.InputTag("slimmedMuons"),
+ #   src = cms.InputTag("slimmedElectrons"),
+    ptMin = cms.double(9)
+  )
+
+process.atLeastTwoLeptons = cms.EDFilter("CandViewCountFilter",
+                                       src = cms.InputTag("minPtLeptons"),
+                                       minNumber = cms.uint32(2)
+                                       )
+
+
+# Configure the ntupler module
+#
+process.ntupler = cms.EDAnalyzer('Ntupler2016',
+                                 # The module automatically detects AOD vs miniAOD, so we configure both
+                                 #
+                                 # Common to all formats objects
+                                 #
+                                 pileup   = cms.InputTag( pileupProductName ),
+                                 rho      = cms.InputTag("fixedGridRhoFastjetAll"),
+                                 beamSpot = cms.InputTag('offlineBeamSpot'),
+                                 genEventInfoProduct = cms.InputTag('generator'),
+                                 #
+                                 # Objects specific to AOD format
+                                 #
+                                 electrons    = cms.InputTag("gedGsfElectrons"),
+                                 muons        = cms.InputTag("muons"),
+                                 genParticles = cms.InputTag("genParticles"),
+                                 vertices     = cms.InputTag("offlinePrimaryVertices"),
+                                 conversions  = cms.InputTag('allConversions'),
+                                 triggerResultTag     = cms.InputTag("TriggerResults", "", "HLT"),
+                                 triggerSummaryTag = cms.InputTag("hltTriggerSummaryAOD", "", "HLT"),
+                                 l1EGTag      = cms.InputTag("caloStage2Digis","EGamma","RECO"),
+                                 l1MuonTag    = cms.InputTag("gmtStage2Digis","Muon","RECO"),
+
+				 pathsToSave  = cms.vstring( "HLT_Ele25_eta2p1_WPTight_Gsf_v",
+							     "HLT_Ele27_WPTight_Gsf_v",
+							     "HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ_v",
+							     "HLT_IsoMu24_v",
+							     "HLT_IsoTkMu24_v",
+							     "HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_v",
+                                                             "HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ",
+							     "HLT_Mu17_TrkIsoVVL_TkMu8_TrkIsoVVL_v",
+							     "HLT_Mu17_TrkIsoVVL_TkMu8_TrkIsoVVL_DZ",						
+                                                             "HLT_Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_v",
+                                                             "HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ",
+                                                             "HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_v",                      
+                                                             "HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ",                                                                                               # "HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass8",
+                                                            # "HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ",
+                                                            # "HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ",
+								),
+                                 filterToMatch= cms.vstring(
+							   "hltEle25erWPTightGsfTrackIsoFilter",
+                                                           "hltEle27WPTightGsfTrackIsoFilter",
+                                                           "hltEle23Ele12CaloIdLTrackIdLIsoVLTrackIsoLeg1Filter",
+                                                           "hltEle23Ele12CaloIdLTrackIdLIsoVLTrackIsoLeg2Filter",
+                                                           "hltL3crIsoL1sMu22L1f0L2f10QL3f24QL3trkIsoFiltered0p09",
+                                                           "hltL3fL1sMu22L1f0Tkf24QL3trkIsoFiltered0p09",
+                                                           "hltL3fL1sDoubleMu114L1f0L2f10OneMuL3Filtered17",
+                                                          # "hltL3pfL1sDoubleMu114L1f0L2pf0L3PreFiltered8",
+                                                           "hltL3pfL1sDoubleMu114ORDoubleMu125L1f0L2pf0L3PreFiltered8",
+                                                           "hltDiMuonGlb17Glb8RelTrkIsoFiltered0p4",
+                                                           "hltL3fL1sDoubleMu114L1f0L2f10L3Filtered17",
+                                                           "hltDiMuonGlbFiltered17TrkFiltered8",
+                                                           "hltDiMuonGlb17Trk8RelTrkIsoFiltered0p4",
+                                                           "hltMu8TrkIsoVVLEle23CaloIdLTrackIdLIsoVLMuonlegL3Filtered8",
+                                                           "hltMu8TrkIsoVVLEle23CaloIdLTrackIdLIsoVLElectronlegTrackIsoFilter",
+                                                           "hltMu12TrkIsoVVLEle23CaloIdLTrackIdLIsoVLMuonlegL3IsoFiltered12",
+                                                           "hltMu12TrkIsoVVLEle23CaloIdLTrackIdLIsoVLElectronlegTrackIsoFilter",
+                                                           "hltMu23TrkIsoVVLEle12CaloIdLTrackIdLIsoVLMuonlegL3IsoFiltered23",
+                                                           "hltMu23TrkIsoVVLEle12CaloIdLTrackIdLIsoVLElectronlegTrackIsoFilter",
+                                  			#  "hltEle35noerWPTightGsfTrackIsoFilter",
+				  			#  "hltEle23Ele12CaloIdLTrackIdLIsoVLTrackIsoLeg1Filter",
+				  			#  "hltEle23Ele12CaloIdLTrackIdLIsoVLTrackIsoLeg2Filter",
+				 			#  "hltL3crIsoL1sMu22Or25L1f0L2f10QL3f27QL3trkIsoFiltered0p07",
+							#  "hltL3fL1DoubleMu155fPreFiltered8",
+							#  "hltL3fL1DoubleMu155fFiltered17",
+							#  "hltDiMuon178RelTrkIsoFiltered0p4",
+							#  "hltMu12TrkIsoVVLEle23CaloIdLTrackIdLIsoVLMuonlegL3IsoFiltered12",
+							#  "hltMu12TrkIsoVVLEle23CaloIdLTrackIdLIsoVLElectronlegTrackIsoFilter",
+							#  "hltMu23TrkIsoVVLEle12CaloIdLTrackIdLIsoVLMuonlegL3IsoFiltered23",
+							#  "hltMu23TrkIsoVVLEle12CaloIdLTrackIdLIsoVLElectronlegTrackIsoFilter"
+										),
+				HLTprocess = cms.string("HLT"),
+
+				#
+                                 # Objects specific to MiniAOD format
+                                #
+                                 electronsMiniAOD    = cms.InputTag("slimmedElectrons"),
+                                 genParticlesMiniAOD = cms.InputTag("prunedGenParticles"),
+                                 verticesMiniAOD     = cms.InputTag("offlineSlimmedPrimaryVertices"),
+                                 conversionsMiniAOD  = cms.InputTag('reducedEgamma:reducedConversions'),
+                                 muonsMiniAOD = cms.InputTag("slimmedMuons"),
+                                 trigger     = cms.InputTag("TriggerResults", "", "HLT"),
+			         prescale = cms.InputTag("patTrigger"),
+                                 objects = cms.InputTag('slimmedPatTrigger'),
+                                 # Effective areas for computing PU correction for isolations
+                               
+                                 effAreasConfigFile = cms.FileInPath("RecoEgamma/ElectronIdentification/data/Fall17/effAreaElectrons_cone03_pfNeuHadronsAndPhotons_94X.txt"),
+
+                                 # ID decisions (common to all formats)
+                                 #
+                                 # all IDs listed below are available given the content of "my_id_modules" defined above.
+                                 # only one is exercised for this example.
+                                 #
+                             
+                                  eleIdMapLoose = cms.InputTag("egmGsfElectronIDs:cutBasedElectronID-Fall17-94X-V2-loose"),
+                                  eleIdMapMedium = cms.InputTag("egmGsfElectronIDs:cutBasedElectronID-Fall17-94X-V2-medium"),
+                                  eleIdMapTight = cms.InputTag("egmGsfElectronIDs:cutBasedElectronID-Fall17-94X-V2-tight"),
+                                  eleMVA90noIso =  cms.InputTag('egmGsfElectronIDs:mvaEleID-Fall17-noIso-V2-wp90'),
+                                  eleMVA80noIso =  cms.InputTag('egmGsfElectronIDs:mvaEleID-Fall17-noIso-V2-wp80'),
+                                  eleMVA90Iso    =  cms.InputTag('egmGsfElectronIDs:mvaEleID-Fall17-iso-V2-wp90'),
+                                  eleMVA80Iso    =  cms.InputTag('egmGsfElectronIDs:mvaEleID-Fall17-iso-V2-wp80'),
+                                  eleMVAValuesMapTokenIso = cms.InputTag('electronMVAValueMapProducer:ElectronMVAEstimatorRun2Fall17IsoV1Values'),
+                                  eleMVAValuesMapTokenNoIso = cms.InputTag('electronMVAValueMapProducer:ElectronMVAEstimatorRun2Fall17NoIsoV1Values'),
+                                 muInputTag = cms.InputTag("gmtStage2Digis","Muon","RECO"),
+                                 isMC = cms.bool(True),
+                                 doMuon = cms.bool(True),
+                                 doEle = cms.bool(False)
+
+                                 )
+
+process.TFileService = cms.Service("TFileService",
+                                   fileName = cms.string( outputFile )
+                                   )
+
+
+#process.p = cms.Path(process.egmGsfElectronIDSequence * process.ntupler)
+process.p = cms.Path(process.egmGsfElectronIDSequence * process.minPtLeptons * process.atLeastTwoLeptons * process.ntupler)
+
